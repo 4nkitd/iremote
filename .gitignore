@@ -1,0 +1,15 @@
+.build/
+dist/
+.DS_Store
+*.p12
+*.pem
+*.key
+*.log
+.env
+.env.*
+/DESIGN.md
+/REVIEW.md
+/ROADMAP.md
+/TESTING.md
+/design/*.figcraft
+/design/iremote-tv1.png
