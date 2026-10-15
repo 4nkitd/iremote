@@ -2,6 +2,13 @@
 
 A native macOS menu bar remote for Google TV and Android TV.
 
+<p align="center">
+  <img src="docs/images/remote.png" alt="iRemote Remote tab with a circular clickpad, media buttons and volume controls" width="320">
+  <img src="docs/images/keyboard.png" alt="iRemote Keyboard tab with direct typing, paste and keyboard shortcuts" width="320">
+</p>
+
+Remote controls and direct keyboard input in the released app. Device names are anonymized.
+
 Requires macOS 15 or later and a TV running Android TV Remote Service on the same local network. Developer mode and ADB are not required. The downloadable alpha supports Apple Silicon Macs only.
 
 ## Install with Homebrew
