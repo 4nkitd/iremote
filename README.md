@@ -26,11 +26,11 @@ brew update
 brew upgrade --cask 4nkitd/tap/iremote
 ```
 
-Alternatively, download `iRemote-0.1.2-macos-arm64.zip` from [Releases](https://github.com/4nkitd/iremote/releases), unzip it and move iRemote.app into Applications.
+Alternatively, download `iRemote-0.2.0-macos-arm64.zip` from [Releases](https://github.com/4nkitd/iremote/releases), unzip it and move iRemote.app into Applications.
 
 ### Alpha signing warning
 
-Version 0.1.2 is ad-hoc signed, **not Developer ID signed or notarised by Apple**. macOS may block the first launch. If you trust the download, attempt to open it, then use **System Settings → Privacy & Security → Open Anyway**, when offered. See [Apple's guidance](https://support.apple.com/en-us/102445). If macOS does not offer approval, build from source instead.
+Version 0.2.0 is ad-hoc signed, **not Developer ID signed or notarised by Apple**. macOS may block the first launch. If you trust the download, attempt to open it, then use **System Settings → Privacy & Security → Open Anyway**, when offered. See [Apple's guidance](https://support.apple.com/en-us/102445). If macOS does not offer approval, build from source instead.
 
 The Homebrew cask does not remove quarantine attributes or bypass Gatekeeper. Installation alone does not grant permission to run the app.
 
@@ -60,6 +60,7 @@ If no TV appears, check that it is awake, that both devices share a network, and
 - Clickpad, Back, Home, Play/Pause, Mute and Power.
 - Volume controls and status, when the TV reports them.
 - Current-app status and a small set of app links.
+- Optional app discovery: iRemote opens each catalog shortcut, watches the TV's app reports and keeps a per-TV list of the shortcuts that launched.
 - Keyboard navigation while the panel is focused.
 - Mac keyboard typing into the focused TV text field, including Unicode, paste, backspace and Return.
 
@@ -74,7 +75,11 @@ The app chooses between two input paths:
 
 Direct keyboard input has been tested on a physical Google TV with YouTube search. Synced-input tests currently use a simulated TV; compatibility varies by TV app.
 
-Configurable app tiles and a global keyboard shortcut are not implemented yet. App links depend on the installed app and its link handling.
+The Apps tab starts with a small catalog of unverified shortcuts because Android TV Remote v2 has no installed-app enumeration. **Discover** offers a scan after pairing or whenever you request it. Confirm **Start scan** to proceed. Scanning interrupts playback and takes up to about two minutes. It presses Home before each candidate, allows one second for navigation, then uses the same deep link as the app tile. It does not require a Home app report; custom launchers may not send one. A fresh matching app report must remain unchanged for one second to confirm the shortcut. An app the TV already reports as the foreground app is accepted when no other report follows the launch. Each launch has an eight-second response window.
+
+Completed scans replace the saved shortcuts for that TV, including an empty result. Cancelled scans and scans receiving no app reports after any launch leave saved results unchanged. Stop, closing the panel, switching tabs or TVs, pairing, power-off, and disconnect all cancel the scan. The scan does not reopen the previous app when it ends; resume playback yourself.
+
+Discovery only checks these eight shortcuts. It is not an installed-app inventory: apps can be installed but slow to launch, fail to handle a link, or not report their foreground package. A normal tile click never removes an app because of a timeout. Configurable app tiles and a global keyboard shortcut are not implemented yet.
 
 ## Privacy and pairing storage
 
@@ -86,7 +91,7 @@ Control traffic stays on your local network over TLS. There is no account, cloud
 
 ## Testing
 
-`swift test` exercises malformed protobuf rejection, pairing-state validation, local TLS pairing, remote commands, app links, text input, serialized volume control, idle pings and certificate mismatch rejection. These tests use a simulated TV and do not establish compatibility with every physical TV.
+`swift test` exercises malformed protobuf rejection, pairing-state validation, local TLS pairing, remote commands, app links, app discovery, text input, serialized volume control, idle pings and certificate mismatch rejection. These tests use a simulated TV and do not establish compatibility with every physical TV.
 
 The optional `FakeTV` executable advertises a simulated TV on the standard ports. Its name is deliberately distinct from a real device:
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 alpha
+
+- App discovery: the Apps tab can verify which catalog shortcuts launch on your TV. In the background iRemote presses Home, opens each shortcut, and confirms it from the TV's own app reports. Confirmed shortcuts are cached per TV, and unverified suggestions are labelled as such.
+- The Apps tab offers to run the scan after pairing a new TV; you can run it again any time from **Discover**.
+- Completed scans replace the saved list for that TV, including an empty result. Cancelled scans, a powered-off TV, lost feedback and disconnects leave saved results untouched.
+- Discovery never removes a shortcut because of a normal launch timeout, and it does not reopen the previous app when the scan ends.
+- 59 automated tests, including a scan state machine with synthetic TV reports and end-to-end TLS discovery against the simulated TV.
+
 ## 0.1.2 alpha
 
 First public release. macOS 15+, Apple Silicon.
