@@ -34,19 +34,85 @@ struct AppsTab: View {
 
     var body: some View {
         let live = model.link == .connected
+        let tilesEnabled = live && model.isOn && !model.isDiscoveringApps
         VStack(alignment: .leading, spacing: 0) {
-            LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(KnownLinks.apps) { app in
-                    AppTile(app: app, running: app.package == model.currentApp) { model.launch(app) }
+            if model.showsDiscoveryConfirmation {
+                VStack(alignment: .leading, spacing: 14) {
+                    Image(systemName: "tv")
+                        .font(.system(size: 26, weight: .light))
+                        .foregroundStyle(Theme.secondary)
+                    Text("Check app shortcuts?")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.label)
+                    Text("This opens up to \(KnownLinks.apps.count) apps on your TV and interrupts playback. Allow about two minutes.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.secondary)
+                    Text("Stay on this tab. Stop cancels the scan. Only confirmed launches are saved; apps that time out may still be installed.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.secondary)
+                    HStack(spacing: 8) {
+                        Button("Not now") { model.cancelAppDiscovery() }
+                            .buttonStyle(PillButton(primary: false))
+                        Button("Start scan") { model.discoverApps() }
+                            .buttonStyle(PillButton(primary: true))
+                            .disabled(!live || !model.isOn)
+                    }
                 }
-            }
-            .opacity(live ? 1 : 0.45)
-            .allowsHitTesting(live)
-            Spacer(minLength: 0)
-            Text("Click an app to open it on the TV")
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            } else {
+                Text(model.appListVerified ? "Confirmed shortcuts" : "Not verified on this TV")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.secondary)
+                    .padding(.bottom, 12)
+                Group {
+                    if model.apps.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "square.grid.2x2")
+                                .font(.system(size: 20))
+                                .foregroundStyle(Theme.tertiary)
+                            Text("No shortcuts confirmed")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(Theme.secondary)
+                            Text("This does not mean your TV has no apps. Try Discover with the TV awake.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Theme.secondary)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 28)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(model.apps) { app in
+                                AppTile(app: app, running: app.package == model.currentApp) { model.launch(app) }
+                            }
+                        }
+                    }
+                }
+                .opacity(live ? 1 : 0.45)
+                .allowsHitTesting(tilesEnabled)
+                Spacer(minLength: 0)
+                Text(model.appDiscoveryStatus)
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 8)
+                HStack(spacing: 8) {
+                    if model.isDiscoveringApps {
+                        ProgressView().controlSize(.small)
+                    }
+                    Spacer(minLength: 0)
+                    Button(model.isDiscoveringApps ? "Stop" : "Discover") {
+                        if model.isDiscoveringApps { model.cancelAppDiscovery() } else { model.requestAppDiscovery() }
+                    }
+                    .buttonStyle(PillButton(primary: false))
+                    .frame(width: 72)
+                    .disabled(!model.isDiscoveringApps && (!live || !model.isOn))
+                }
+                .frame(height: 30)
                 .padding(.bottom, 12)
+            }
         }
     }
 }

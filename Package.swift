@@ -12,5 +12,6 @@ let package = Package(
         .target(name: "FakeTVKit", dependencies: ["RemoteCore"], path: "Sources/FakeTVKit", swiftSettings: v5),
         .executableTarget(name: "FakeTV", dependencies: ["FakeTVKit", "RemoteCore"], path: "Sources/FakeTV", swiftSettings: v5),
         .testTarget(name: "RemoteCoreTests", dependencies: ["RemoteCore", "FakeTVKit"], path: "Tests/RemoteCoreTests", swiftSettings: v5),
+        .testTarget(name: "AppModelTests", dependencies: ["iRemote"], path: "Tests/AppModelTests", swiftSettings: v5),
     ]
 )

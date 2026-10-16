@@ -83,6 +83,7 @@ final class PanelController: NSObject {
 
     func close() {
         model.pauseTyping()
+        model.cancelAppDiscovery()
         panel.orderOut(nil)
         statusItem.button?.highlight(false)
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
@@ -93,7 +94,7 @@ final class PanelController: NSObject {
 
     /// Remote shortcuts while the panel is key. Returns true when the key was used.
     private func handleKey(code: UInt16, chars: String?, plain: Bool) -> Bool {
-        guard panel.isKeyWindow, model.pairing == nil, model.tab != .keyboard, plain else { return false }
+        guard panel.isKeyWindow, model.pairing == nil, !model.showsDiscoveryConfirmation, model.tab != .keyboard, plain else { return false }
         let key: KeyCode?
         switch code {
         case 123: key = .dpadLeft
