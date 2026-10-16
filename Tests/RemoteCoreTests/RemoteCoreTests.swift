@@ -107,6 +107,14 @@ final class PairingSecretTests: XCTestCase {
     }
 }
 
+final class KnownAppTests: XCTestCase {
+    func testDeepLinksResolveToTheirExpectedPackage() {
+        for app in KnownLinks.apps {
+            XCTAssertEqual(KnownLinks.package(for: app.link), app.package)
+        }
+    }
+}
+
 final class IntegrationTests: XCTestCase {
     static var clientDir: URL!
     static var tvDir: URL!
@@ -217,6 +225,56 @@ final class IntegrationTests: XCTestCase {
         remote.start()
         wait(for: [refused], timeout: 10)
         XCTAssertTrue(tv.log.keys.isEmpty)
+    }
+
+    func testDiscoveryOverTLSWithoutHomeReportsExcludesMissingApps() throws {
+        let client = try ClientIdentity.loadOrCreate(in: Self.clientDir)
+        let tvIdentity = try ClientIdentity.loadOrCreate(in: Self.tvDir)
+        let tv = FakeTV(identity: tvIdentity)
+        let youtube = KnownLinks.apps[0], netflix = KnownLinks.apps[1]
+        tv.installedPackages = [youtube.package]
+        tv.reportsHomeApp = false
+        tv.trust(clientCertificateSHA256: (SecCertificateCopyData(client.certificate) as Data).sha256Hex)
+        let listening = expectation(description: "listening")
+        try tv.start { listening.fulfill() }
+        defer { tv.stop() }
+        wait(for: [listening], timeout: 5)
+
+        var scan = AppDiscoveryScan(candidates: [youtube, netflix])
+        var result: [String]?
+        var started = false
+        var remote: RemoteSession!
+        let done = expectation(description: "scan completed")
+        let timer = DispatchSource.makeTimerSource(queue: .main)
+        func apply(_ action: AppDiscoveryScan.Action?) {
+            switch action {
+            case .home: remote.press(.home)
+            case .launch(let link): remote.launch(link)
+            case .completed(let packages): result = packages; timer.cancel(); done.fulfill()
+            case .unavailable: XCTFail("TV provided no app reports"); timer.cancel(); done.fulfill()
+            case nil: break
+            }
+        }
+        let pin = (SecCertificateCopyData(tvIdentity.certificate) as Data).sha256Hex
+        remote = RemoteSession(host: "127.0.0.1", port: tv.remotePort, identity: client, pinnedCertificateSHA256: pin) { event in
+            switch event {
+            case .power(true) where !started:
+                started = true
+                apply(scan.start(at: ProcessInfo.processInfo.systemUptime))
+            case .currentApp(let package):
+                apply(scan.receive(package, at: ProcessInfo.processInfo.systemUptime))
+            default: break
+            }
+        }
+        timer.schedule(deadline: .now(), repeating: 0.05)
+        timer.setEventHandler { apply(scan.tick(at: ProcessInfo.processInfo.systemUptime)) }
+        timer.resume()
+        defer { timer.cancel(); remote.close() }
+        remote.start()
+        wait(for: [done], timeout: 20)
+        XCTAssertEqual(result, [youtube.package])
+        XCTAssertEqual(tv.log.links, [youtube.link, netflix.link])
+        XCTAssertEqual(tv.log.keys, [KeyCode.home.rawValue, KeyCode.home.rawValue])
     }
 
     func testUnpairedClientIsRejectedByTV() throws {

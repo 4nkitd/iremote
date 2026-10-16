@@ -14,6 +14,8 @@ public final class FakeTV {
 
     public var onCode: ((String) -> Void)?
     public var onLog: ((String) -> Void)?
+    public var installedPackages = Set(KnownLinks.apps.map(\.package))
+    public var reportsHomeApp = true
     public private(set) var log = Log()
     public private(set) var pairedClients: Set<String> = []
     public private(set) var volume = VolumeInfo(level: 18, max: 100, muted: false)
@@ -167,7 +169,11 @@ public final class FakeTV {
                 let link = l.string(1)
                 self.log.links.append(link)
                 self.emit("open \(link)")
-                self.app = KnownLinks.package(for: link) ?? link
+                if let package = KnownLinks.package(for: link), self.installedPackages.contains(package) {
+                    self.app = package
+                } else {
+                    self.app = "com.google.android.apps.tv.launcherx"
+                }
                 self.remotes.forEach { self.sendApp($0) }
             }
         }
@@ -193,7 +199,7 @@ public final class FakeTV {
             remotes.forEach { sendStart($0) }
         case .home:
             app = "com.google.android.apps.tv.launcherx"
-            remotes.forEach { sendApp($0) }
+            if reportsHomeApp { remotes.forEach { sendApp($0) } }
         case .moveEnd:
             fieldCursor = fieldText.utf16.count
             echoCursor()
